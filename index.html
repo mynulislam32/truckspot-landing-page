@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Truck Spot | Live Real-Time Food Truck Radar &amp; Tracker App</title>
+  <meta name="description" content="Track down the best street food trucks in your city in real time. Live GPS tracking, wait times, daily pop-up locations, and fresh menus before our official app launch.">
+  <meta name="keywords" content="food truck tracker, real-time street food map, live food truck GPS, taco trucks near me, smash burgers, pop-up food trucks, Truck Spot app">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Truck Spot | Live Real-Time Food Truck Radar">
+  <meta property="og:description" content="Never chase a cold trail again. Find the best food trucks near you in real time with live GPS tracking and menus.">
+  <meta property="og:type" content="website">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5E14',
+              orangeHover: '#E04A05',
+              amber: '#FFB703',
+              gold: '#FB8500',
+              emerald: '#10B981',
+              dark: '#0B0E14',
+              darkSurface: '#121721',
+              darkCard: '#181F2C',
+              darkBorder: '#232D3F',
+              slateText: '#94A3B8'
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Leaflet.js CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>
+    if (!window.lucide) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"><\/script>');
+    }
+  </script>
+
+  <style>
+    /* Custom Styling for Street Food Glow & Leaflet Map */
+    body {
+      background-color: #0B0E14;
+      color: #F8FAFC;
+    }
+    .btn-fire {
+      background: linear-gradient(135deg, #FF5E14 0%, #FF8A00 100%);
+      color: #FFFFFF;
+      box-shadow: 0 8px 24px -4px rgba(255, 94, 20, 0.45);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-fire:hover {
+      background: linear-gradient(135deg, #FF7333 0%, #FFA033 100%);
+      box-shadow: 0 12px 30px -4px rgba(255, 94, 20, 0.65);
+      transform: translateY(-2px);
+    }
+    .card-glass {
+      background: rgba(24, 31, 44, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card-glass:hover {
+      border-color: rgba(255, 94, 20, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 20px -3px rgba(255, 94, 20, 0.15);
+    }
+    .hero-glow {
+      background: radial-gradient(circle at 50% 20%, rgba(255, 94, 20, 0.18) 0%, rgba(251, 133, 0, 0.05) 45%, transparent 70%);
+    }
+    .map-container {
+      height: 480px;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      z-index: 10;
+    }
+    /* Custom Leaflet Marker Pulse */
+    .truck-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      box-shadow: 0 0 18px rgba(255, 94, 20, 0.7);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .truck-marker:hover {
+      transform: scale(1.18);
+    }
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 9999px;
+      animation: pulseAnimation 2s infinite;
+      border: 2px solid #FF5E14;
+    }
+    @keyframes pulseAnimation {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    /* Sleek Phone Frame for Mockup */
+    .phone-mockup {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 35px -5px rgba(255, 94, 20, 0.25);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0E14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #232D3F;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #FF5E14;
+    }
+  </style>
+</head>
+<body class="selection:bg-brand-orange selection:text-white font-sans antialiased min-h-screen flex flex-col justify-between">
+
+  <!-- ========================================================================= -->
+  <!-- 1. TOP LIVE TICKER: REAL-TIME CRAWLER STATUS                              -->
+  <!-- ========================================================================= -->
+  <aside class="bg-black/95 text-slate-300 py-2 px-4 text-xs font-mono border-b border-brand-darkBorder">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center text-[11px] gap-2">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-orange/15 text-brand-orange font-bold border border-brand-orange/30">
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-orange animate-ping"></span>
+          LIVE STREET RADAR
+        </span>
+        <span class="text-slate-300 hidden sm:inline">
+          42 food trucks broadcasting real-time GPS locations right now
+        </span>
+      </div>
+
+      <div class="flex items-center gap-4 text-slate-400 font-mono">
+        <span class="text-brand-emerald flex items-center gap-1 font-bold">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+          <span>Downtown Metro Grid Active</span>
+        </span>
+        <span class="hidden md:inline">&bull;</span>
+        <span class="hidden md:inline text-brand-amber">Average Wait: 7 Mins</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- 2. STICKY NAVBAR & BRAND LOGO                                             -->
+  <!-- ========================================================================= -->
+  <header class="sticky top-0 z-50 bg-brand-dark/95 backdrop-blur-md border-b border-brand-darkBorder transition-all">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+      
+      <!-- Truck Spot SVG Logo -->
+      <a href="#home" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-orange to-brand-amber text-white flex items-center justify-center shadow-lg shadow-brand-orange/30 group-hover:scale-105 transition-transform">
+          <!-- Truck Spot SVG Emblem: Food Truck with Radar Beacon -->
+          <svg class="w-6 h-6 fill-none stroke-white stroke-[2.2]" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 8h3v3H8zM6 1h4M8 0v2"/>
+          </svg>
+        </div>
+        <div class="flex flex-col text-left">
+          <div class="flex items-center gap-1.5 leading-none">
+            <span class="font-black text-2xl tracking-tight text-white">
+              TRUCK<span class="text-brand-orange">SPOT</span>
+            </span>
+            <span class="text-[9px] font-mono font-bold bg-brand-orange/20 text-brand-orange px-1.5 py-0.5 rounded border border-brand-orange/30">
+              RADAR
+            </span>
+          </div>
+          <span class="text-[9px] font-mono tracking-[0.25em] uppercase text-brand-slateText mt-1 font-bold">
+            Live Food Truck Finder
+          </span>
+        </div>
+      </a>
+
+      <!-- Center Navigation Links -->
+      <nav class="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">
+        <a href="#map-section" class="hover:text-brand-orange transition-colors flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-brand-emerald animate-pulse"></span>
+          <span>Live Map</span>
+        </a>
+        <a href="#featured" class="hover:text-brand-orange transition-colors">Featured Trucks</a>
+        <a href="#how-it-works" class="hover:text-brand-orange transition-colors">How It Works</a>
+        <a href="#vendors" class="hover:text-brand-orange transition-colors">For Vendors</a>
+        <a href="#early-access" class="hover:text-brand-orange transition-colors">Get Notified</a>
+      </nav>
+
+      <!-- Right CTA: Early Access Push Trigger -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <button 
+          onclick="openVendorModal()" 
+          class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-transparent hover:bg-brand-darkSurface text-white border border-brand-darkBorder text-xs font-mono font-bold uppercase tracking-wider transition-colors"
+        >
+          <i data-lucide="truck" class="w-3.5 h-3.5 text-brand-amber"></i>
+          <span>Are You a Truck?</span>
+        </button>
+
+        <a 
+          href="#early-access" 
+          class="btn-fire font-sans font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 shadow-md"
+        >
+          <i data-lucide="bell-ring" class="w-3.5 h-3.5"></i>
+          <span>Get Early Access</span>
+        </a>
+
+        <!-- Mobile Menu Toggle -->
+        <button id="mobile-toggle" class="lg:hidden p-2 text-white hover:text-brand-orange" aria-label="Toggle Menu">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Mobile Drawer -->
+    <div id="mobile-drawer" class="hidden lg:hidden bg-brand-darkSurface border-b border-brand-darkBorder px-6 py-5 space-y-3 text-xs font-mono uppercase tracking-wider text-left text-slate-200">
+      <a href="#map-section" class="block py-1 text-brand-orange font-bold">● Interactive Live Map</a>
+      <a href="#featured" class="block py-1 hover:text-brand-orange">Popular Trucks &amp; Menus</a>
+      <a href="#how-it-works" class="block py-1 hover:text-brand-orange">App Features &amp; Radar</a>
+      <a href="#vendors" class="block py-1 hover:text-brand-orange">Vendor Broadcast Hub</a>
+      <a href="#early-access" class="block py-1 text-brand-amber font-bold">Claim Launch VIP Pass &rarr;</a>
+    </div>
+  </header>
+
+  <main class="flex-1">
+    
+    <!-- ========================================================================= -->
+    <!-- 3. HERO SECTION: APPETIZING VALUE PROP & INTERACTIVE PHONE MOCKUP         -->
+    <!-- ========================================================================= -->
+    <section id="home" class="relative pt-12 pb-20 lg:pt-20 lg:pb-32 overflow-hidden hero-glow border-b border-brand-darkBorder">
+      <div class="max-w-7xl mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        
+        <!-- Left Column: Copy & Value Proposition -->
+        <div class="lg:col-span-7 space-y-8 text-left">
+          
+          <!-- Launch Tag -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-orange/15 border border-brand-orange/30 text-xs font-mono font-bold text-brand-orange uppercase">
+            <span class="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></span>
+            <span>LAUNCHING SOON &bull; REAL-TIME FOOD TRUCK RADAR</span>
+          </div>
+
+          <!-- Bold Appetizing Headline -->
+          <div class="space-y-4">
+            <h1 class="text-4xl sm:text-6xl lg:text-6.5xl font-black text-white tracking-tight leading-[1.05] uppercase">
+              Never Chase A <br />
+              Cold Trail Again. <br />
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange via-amber-400 to-white">
+                Find Real-Time Food Trucks
+              </span> <br />
+              Right Around You.
+            </h1>
+
+            <p class="text-base sm:text-lg text-slate-300 font-light max-w-xl leading-relaxed">
+              Street food moves fast. <strong>Truck Spot</strong> broadcasts live GPS parking spots, real-time wait times, secret daily off-menu specials, and instant ordering before you even walk out the door.
+            </p>
+          </div>
+
+          <!-- CTAs & App Store Coming Soon Badges -->
+          <div class="space-y-5">
+            <div class="flex flex-wrap items-center gap-4">
+              <a 
+                href="#early-access" 
+                class="btn-fire font-sans font-black px-8 py-4 rounded-2xl text-xs sm:text-sm uppercase tracking-wider flex items-center gap-3 shadow-xl"
+              >
+                <i data-lucide="zap" class="w-4 h-4"></i>
+                <span>Join VIP Launch Waitlist</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </a>
+
+              <a 
+                href="#map-section" 
+                class="px-6 py-4 rounded-2xl bg-brand-darkSurface hover:bg-brand-darkCard text-white border border-brand-darkBorder font-mono text-xs font-bold uppercase transition-colors flex items-center gap-2"
+              >
+                <i data-lucide="compass" class="w-4 h-4 text-brand-orange"></i>
+                <span>Preview Live Map</span>
+              </a>
+            </div>
+
+            <!-- App Store & Google Play Mock Badges -->
+            <div class="flex flex-wrap items-center gap-3 pt-2 text-xs font-mono text-slate-400">
+              <div class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-brand-darkSurface border border-brand-darkBorder text-white">
+                <i data-lucide="apple" class="w-5 h-5 text-white"></i>
+                <div class="text-left leading-tight">
+                  <span class="text-[9px] text-slate-400 uppercase block">Coming Soon to</span>
+                  <strong class="text-xs font-bold">App Store</strong>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-brand-darkSurface border border-brand-darkBorder text-white">
+                <i data-lucide="play" class="w-5 h-5 text-brand-amber"></i>
+                <div class="text-left leading-tight">
+                  <span class="text-[9px] text-slate-400 uppercase block">Pre-Register on</span>
+                  <strong class="text-xs font-bold">Google Play</strong>
+                </div>
+              </div>
+
+              <span class="text-[11px] text-brand-emerald font-bold flex items-center gap-1.5 ml-2">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                <span>Over 3,400+ Foodies Registered</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Social Proof Micro-Strip -->
+          <div class="pt-2 grid grid-cols-3 gap-4 border-t border-brand-darkBorder text-left font-mono">
+            <div>
+              <strong class="text-xl sm:text-2xl font-black text-brand-orange block">100%</strong>
+              <span class="text-[11px] text-slate-400">Live GPS Accuracy</span>
+            </div>
+            <div>
+              <strong class="text-xl sm:text-2xl font-black text-brand-amber block">&lt; 8 Mins</strong>
+              <span class="text-[11px] text-slate-400">Avg. Queue Time</span>
+            </div>
+            <div>
+              <strong class="text-xl sm:text-2xl font-black text-brand-emerald block">R0 Fees</strong>
+              <span class="text-[11px] text-slate-400">Zero App Markups</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Interactive Phone Mockup Showcase -->
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="relative w-full max-w-[340px]">
+            
+            <!-- Glowing Radar Effect in Background -->
+            <div class="absolute -top-10 -left-10 w-80 h-80 bg-brand-orange/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Phone Frame -->
+            <div class="relative rounded-[48px] p-3.5 bg-gradient-to-b from-slate-700 via-slate-900 to-black border-4 border-slate-700 phone-mockup text-left">
+              
+              <!-- Screen Wrapper -->
+              <div class="rounded-[38px] bg-brand-dark overflow-hidden border border-white/10 relative text-white">
+                
+                <!-- Dynamic Island / Speaker Notch -->
+                <div class="h-6 bg-black flex items-center justify-between px-6 pt-1 text-[10px] font-mono text-slate-400">
+                  <span>9:41</span>
+                  <div class="w-20 h-4 bg-black rounded-full mx-auto"></div>
+                  <div class="flex items-center gap-1 text-[10px]">
+                    <i data-lucide="wifi" class="w-3 h-3"></i>
+                    <i data-lucide="battery" class="w-3 h-3 text-brand-emerald"></i>
+                  </div>
+                </div>
+
+                <!-- Mockup App Header -->
+                <div class="p-4 bg-brand-darkSurface border-b border-brand-darkBorder flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-brand-orange animate-ping"></span>
+                    <strong class="font-black text-sm tracking-tight">TRUCKSPOT</strong>
+                  </div>
+                  <span class="text-[10px] font-mono text-brand-orange bg-brand-orange/15 px-2 py-0.5 rounded-full font-bold">
+                    Downtown Metro
+                  </span>
+                </div>
+
+                <!-- Mockup Mini Radar Map View -->
+                <div class="relative h-56 bg-slate-950 overflow-hidden">
+                  <img 
+                    src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?auto=format&fit=crop&w=800&q=80" 
+                    alt="Food Truck on Street" 
+                    class="w-full h-full object-cover filter brightness-40"
+                  >
+                  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-brand-dark/60 to-brand-dark"></div>
+
+                  <!-- Radar Rings Overlay -->
+                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-44 h-44 rounded-full border border-brand-orange/40 animate-ping"></div>
+                    <div class="w-28 h-28 rounded-full border border-brand-amber/50"></div>
+                    <div class="w-12 h-12 rounded-full bg-brand-orange/30 flex items-center justify-center">
+                      <span class="w-4 h-4 rounded-full bg-brand-orange"></span>
+                    </div>
+                  </div>
+
+                  <!-- Floating Pins inside phone -->
+                  <div class="absolute top-8 left-8 bg-brand-orange text-white text-[9px] font-mono font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
+                    <span>🌮 El Fuego (0.2m)</span>
+                  </div>
+                  <div class="absolute bottom-12 right-6 bg-brand-amber text-black text-[9px] font-mono font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
+                    <span>🍔 Smash Lab (0.4m)</span>
+                  </div>
+                </div>
+
+                <!-- Mockup Live Card Sheet -->
+                <div class="p-4 bg-brand-darkCard -mt-6 relative z-10 rounded-t-3xl border-t border-brand-darkBorder space-y-3">
+                  <div class="w-10 h-1 bg-slate-600 rounded-full mx-auto"></div>
+                  
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <span class="text-[9px] font-mono text-brand-emerald font-bold uppercase flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-brand-emerald"></span>
+                        Open Now &bull; Serving Hot
+                      </span>
+                      <h4 class="font-bold text-sm text-white">El Fuego Birria Tacos</h4>
+                      <p class="text-[10px] text-slate-400">4th &amp; Pine St &bull; 0.2 miles away</p>
+                    </div>
+                    <div class="text-right">
+                      <span class="font-mono text-xs font-bold text-brand-amber">4.9 ★</span>
+                      <span class="text-[9px] text-slate-400 block font-mono">6 min line</span>
+                    </div>
+                  </div>
+
+                  <!-- Dish Sample -->
+                  <div class="p-2.5 rounded-xl bg-brand-dark border border-brand-darkBorder flex items-center justify-between text-xs font-mono">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm">🌮</span>
+                      <span class="text-[11px] text-slate-200">Crispy Quesabirria x3</span>
+                    </div>
+                    <span class="text-brand-orange font-bold">$13.50</span>
+                  </div>
+
+                  <!-- Action Button -->
+                  <button class="w-full py-2.5 rounded-xl btn-fire font-bold text-xs uppercase tracking-wider font-mono">
+                    Order Ahead / Skip Line
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 4. INTERACTIVE NEARBY FOOD TRUCKS MAP SECTION (LEAFLET.JS)                -->
+    <!-- ========================================================================= -->
+    <section id="map-section" class="py-20 max-w-7xl mx-auto px-6 lg:px-12 space-y-8 text-left">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-brand-darkBorder">
+        <div>
+          <span class="text-brand-orange text-xs font-mono font-bold uppercase tracking-widest bg-brand-orange/15 border border-brand-orange/30 px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5">
+            <i data-lucide="radar" class="w-3.5 h-3.5"></i>
+            <span>Interactive Downtown Radar</span>
+          </span>
+          <h2 class="text-3xl sm:text-4xl font-black text-white mt-2">
+            Click a Pin to Inspect Live Truck Location &amp; Menu
+          </h2>
+        </div>
+
+        <div class="flex items-center gap-2 font-mono text-xs text-slate-400">
+          <span class="w-2.5 h-2.5 rounded-full bg-brand-emerald animate-pulse"></span>
+          <span>5 Food Trucks Active in 1.5 mi Radius</span>
+        </div>
+      </div>
+
+      <!-- Map & Live Card Split Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left: Leaflet Interactive Map Container (8 cols) -->
+        <div class="lg:col-span-8 space-y-3">
+          <div class="relative rounded-3xl border border-brand-darkBorder overflow-hidden shadow-2xl bg-slate-950">
+            <div id="truck-map" class="map-container w-full"></div>
+            
+            <!-- Map Legend Overlay -->
+            <div class="absolute bottom-4 left-4 z-20 bg-brand-dark/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-brand-darkBorder font-mono text-[11px] text-slate-300 flex items-center gap-3">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-brand-orange"></span>
+                <span>Selected Truck</span>
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-brand-emerald"></span>
+                <span>Open Now</span>
+              </span>
+              <span class="hidden sm:inline text-slate-500">CartoDB Dark Tiles</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 font-mono flex items-center gap-2">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-brand-orange"></i>
+            <span>Tip: Drag, zoom, or click any food truck icon on the map to switch live details instantly.</span>
+          </p>
+        </div>
+
+        <!-- Right: Live Truck Detail Panel (4 cols) -->
+        <div class="lg:col-span-4">
+          <div id="live-truck-panel" class="card-glass p-6 sm:p-7 rounded-3xl space-y-5 border border-brand-darkBorder relative overflow-hidden">
+            
+            <!-- Live Indicator Badge -->
+            <div class="flex items-center justify-between">
+              <span id="panel-status" class="px-2.5 py-1 rounded-full bg-brand-emerald/15 text-brand-emerald font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-ping"></span>
+                Open Now &bull; Parked
+              </span>
+              <span id="panel-rating" class="font-mono text-xs font-bold text-brand-amber flex items-center gap-1">
+                4.9 ★ <span class="text-slate-500">(184 reviews)</span>
+              </span>
+            </div>
+
+            <!-- Truck Photo & Identity -->
+            <div class="space-y-3">
+              <div class="aspect-[16/10] rounded-2xl overflow-hidden bg-slate-900 border border-brand-darkBorder relative">
+                <img 
+                  id="panel-img" 
+                  src="https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=800&q=80" 
+                  alt="Food Truck Specialty" 
+                  class="w-full h-full object-cover transition-all duration-300"
+                >
+                <div class="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-mono text-white">
+                  <span id="panel-cuisine">Mexican &bull; Birria Specialists</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 id="panel-title" class="text-2xl font-black text-white leading-tight">
+                  El Fuego Birria Tacos
+                </h3>
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-400 mt-1">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-orange shrink-0"></i>
+                  <span id="panel-address">4th &amp; Pine St (Outside City Hall)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Real-time Stats Grid -->
+            <div class="grid grid-cols-2 gap-2.5 py-3 border-y border-brand-darkBorder font-mono text-xs">
+              <div class="p-2.5 rounded-xl bg-brand-dark/70 border border-brand-darkBorder">
+                <span class="text-[10px] text-slate-400 uppercase block">Distance</span>
+                <strong id="panel-distance" class="text-sm font-bold text-white">0.2 Miles</strong>
+              </div>
+              <div class="p-2.5 rounded-xl bg-brand-dark/70 border border-brand-darkBorder">
+                <span class="text-[10px] text-slate-400 uppercase block">Estimated Line</span>
+                <strong id="panel-wait" class="text-sm font-bold text-brand-amber">~6 Min Wait</strong>
+              </div>
+            </div>
+
+            <!-- Signature Dish Preview -->
+            <div class="space-y-1.5 font-mono text-xs">
+              <span class="text-[10px] uppercase font-bold text-slate-400 block">Today's Star Dish:</span>
+              <div class="p-3 rounded-2xl bg-brand-dark/90 border border-brand-darkBorder flex items-center justify-between">
+                <div>
+                  <strong id="panel-dish-name" class="text-white block font-bold">Crispy Quesabirria w/ Consomé</strong>
+                  <span id="panel-dish-desc" class="text-[10px] text-slate-400">Slow braised beef, Oaxaca cheese, dipping broth</span>
+                </div>
+                <span id="panel-dish-price" class="text-brand-orange font-black text-sm ml-2">$13.50</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-1 space-y-2 font-mono">
+              <a 
+                href="#early-access" 
+                class="w-full btn-fire py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg"
+              >
+                <i data-lucide="bell" class="w-4 h-4"></i>
+                <span>Get Pop-Up Alerts for This Truck</span>
+              </a>
+
+              <button 
+                onclick="alert('Directions calculated! GPS Coordinates dispatched to your mobile navigation app.');"
+                class="w-full py-2.5 rounded-xl bg-brand-darkSurface hover:bg-brand-darkCard text-white border border-brand-darkBorder text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+              >
+                <i data-lucide="navigation" class="w-3.5 h-3.5 text-brand-orange"></i>
+                <span>Get Walking Directions</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 5. FEATURED TRUCKS, MENUS & OPERATING HOURS                               -->
+    <!-- ========================================================================= -->
+    <section id="featured" class="py-20 bg-brand-darkSurface border-y border-brand-darkBorder text-left">
+      <div class="max-w-7xl mx-auto px-6 lg:px-12 space-y-12">
+        
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-brand-darkBorder">
+          <div>
+            <span class="text-brand-amber text-xs font-mono font-bold uppercase tracking-widest bg-brand-amber/15 border border-brand-amber/30 px-3.5 py-1.5 rounded-full inline-block">
+              CURATED STREET SPECIALISTS
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-black text-white mt-2">
+              Featured Food Trucks &amp; Signature Menus
+            </h2>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+            <button onclick="filterTrucks('all')" id="btn-cat-all" class="px-4 py-2 rounded-xl bg-brand-orange text-white font-bold transition-all shadow-sm">
+              All Trucks
+            </button>
+            <button onclick="filterTrucks('tacos')" id="btn-cat-tacos" class="px-4 py-2 rounded-xl bg-brand-darkCard hover:bg-brand-darkBorder text-slate-300 font-bold transition-all border border-brand-darkBorder">
+              Tacos &amp; Birria
+            </button>
+            <button onclick="filterTrucks('burgers')" id="btn-cat-burgers" class="px-4 py-2 rounded-xl bg-brand-darkCard hover:bg-brand-darkBorder text-slate-300 font-bold transition-all border border-brand-darkBorder">
+              Smash Burgers
+            </button>
+            <button onclick="filterTrucks('pizza')" id="btn-cat-pizza" class="px-4 py-2 rounded-xl bg-brand-darkCard hover:bg-brand-darkBorder text-slate-300 font-bold transition-all border border-brand-darkBorder">
+              Wood-Fired Pizza
+            </button>
+            <button onclick="filterTrucks('asian')" id="btn-cat-asian" class="px-4 py-2 rounded-xl bg-brand-darkCard hover:bg-brand-darkBorder text-slate-300 font-bold transition-all border border-brand-darkBorder">
+              Bao &amp; BBQ
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Curated Food Truck Cards -->
+        <div id="trucks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          <!-- TRUCK 1: El Fuego Birria -->
+          <div class="truck-card card-glass rounded-3xl overflow-hidden flex flex-col justify-between" data-category="tacos">
+            <div>
+              <div class="aspect-[16/11] overflow-hidden bg-slate-900 relative">
+                <img 
+                  src="https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=800&q=80" 
+                  alt="El Fuego Birria Tacos" 
+                  class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                >
+                <span class="absolute top-3 left-3 bg-brand-orange text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase">
+                  Tacos &bull; 0.2 mi
+                </span>
+                <span class="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-brand-amber text-[10px] font-mono font-bold px-2.5 py-1 rounded-full">
+                  4.9 ★ (184)
+                </span>
+              </div>
+
+              <div class="p-5 space-y-3">
+                <div>
+                  <span class="text-[10px] font-mono text-brand-emerald uppercase font-bold block">
+                    ● Open Now &bull; Closes 10:00 PM
+                  </span>
+                  <h3 class="font-bold text-lg text-white leading-snug mt-0.5">
+                    El Fuego Birria Tacos
+                  </h3>
+                  <p class="text-xs font-mono text-slate-400 mt-0.5">4th &amp; Pine St &bull; City Center</p>
+                </div>
+
+                <!-- Signature Dishes -->
+                <div class="space-y-1.5 pt-2 border-t border-brand-darkBorder font-mono text-xs">
+                  <div class="flex justify-between text-slate-300">
+                    <span>Quesabirria w/ Consomé</span>
+                    <strong class="text-brand-orange">$13.50</strong>
+                  </div>
+                  <div class="flex justify-between text-slate-400 text-[11px]">
+                    <span>Loaded Birria Nachos</span>
+                    <strong class="text-white">$11.00</strong>
+                  </div>
+                </div>
+
+                <!-- Operating Hours -->
+                <div class="text-[11px] font-mono text-slate-400 pt-2 border-t border-brand-darkBorder/60 flex items-center justify-between">
+                  <span>Hours Today:</span>
+                  <span class="text-slate-200 font-bold">11:30 AM – 10:00 PM</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 pt-0">
+              <button 
+                onclick="focusTruckOnMap(37.7749, -122.4194, 'El Fuego Birria Tacos')" 
+                class="w-full py-2.5 rounded-xl bg-brand-darkSurface hover:bg-brand-darkBorder text-white border border-brand-darkBorder font-mono text-xs font-bold uppercase transition-colors flex items-center justify-center gap-1.5"
+              >
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-orange"></i>
+                <span>Locate on Map</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TRUCK 2: Heavy Metal Smash Burgers -->
+          <div class="truck-card card-glass rounded-3xl overflow-hidden flex flex-col justify-between" data-category="burgers">
+            <div>
+              <div class="aspect-[16/11] overflow-hidden bg-slate-900 relative">
+                <img 
+                  src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80" 
+                  alt="Heavy Metal Smash Burgers" 
+                  class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                >
+                <span class="absolute top-3 left-3 bg-brand-amber text-black text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase">
+                  Burgers &bull; 0.4 mi
+                </span>
+                <span class="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-brand-amber text-[10px] font-mono font-bold px-2.5 py-1 rounded-full">
+                  4.8 ★ (220)
+                </span>
+              </div>
+
+              <div class="p-5 space-y-3">
+                <div>
+                  <span class="text-[10px] font-mono text-brand-emerald uppercase font-bold block">
+                    ● Open Now &bull; Closes 11:30 PM
+                  </span>
+                  <h3 class="font-bold text-lg text-white leading-snug mt-0.5">
+                    Heavy Metal Smash Lab
+                  </h3>
+                  <p class="text-xs font-mono text-slate-400 mt-0.5">8th Ave &amp; Market St</p>
+                </div>
+
+                <div class="space-y-1.5 pt-2 border-t border-brand-darkBorder font-mono text-xs">
+                  <div class="flex justify-between text-slate-300">
+                    <span>Double Wagyu Smash w/ Special Sauce</span>
+                    <strong class="text-brand-orange">$12.00</strong>
+                  </div>
+                  <div class="flex justify-between text-slate-400 text-[11px]">
+                    <span>Truffle Garlic Herb Fries</span>
+                    <strong class="text-white">$6.50</strong>
+                  </div>
+                </div>
+
+                <div class="text-[11px] font-mono text-slate-400 pt-2 border-t border-brand-darkBorder/60 flex items-center justify-between">
+                  <span>Hours Today:</span>
+                  <span class="text-slate-200 font-bold">12:00 PM – 11:30 PM</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 pt-0">
+              <button 
+                onclick="focusTruckOnMap(37.7785, -122.4140, 'Heavy Metal Smash Lab')" 
+                class="w-full py-2.5 rounded-xl bg-brand-darkSurface hover:bg-brand-darkBorder text-white border border-brand-darkBorder font-mono text-xs font-bold uppercase transition-colors flex items-center justify-center gap-1.5"
+              >
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-amber"></i>
+                <span>Locate on Map</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TRUCK 3: Timber & Fire Neapolitan Pizza -->
+          <div class="truck-card card-glass rounded-3xl overflow-hidden flex flex-col justify-between" data-category="pizza">
+            <div>
+              <div class="aspect-[16/11] overflow-hidden bg-slate-900 relative">
+                <img 
+                  src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80" 
+                  alt="Wood Fired Neapolitan Pizza Truck" 
+                  class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                >
+                <span class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase">
+                  Pizza &bull; 0.7 mi
+                </span>
+                <span class="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-brand-amber text-[10px] font-mono font-bold px-2.5 py-1 rounded-full">
+                  4.9 ★ (140)
+                </span>
+              </div>
+
+              <div class="p-5 space-y-3">
+                <div>
+                  <span class="text-[10px] font-mono text-brand-emerald uppercase font-bold block">
+                    ● Open Now &bull; Closes 9:30 PM
+                  </span>
+                  <h3 class="font-bold text-lg text-white leading-snug mt-0.5">
+                    Timber &amp; Fire Pizza Co.
+                  </h3>
+                  <p class="text-xs font-mono text-slate-400 mt-0.5">Brewery District Lot #3</p>
+                </div>
+
+                <div class="space-y-1.5 pt-2 border-t border-brand-darkBorder font-mono text-xs">
+                  <div class="flex justify-between text-slate-300">
+                    <span>Hot Honey &amp; Soppressata Pizza</span>
+                    <strong class="text-brand-orange">$15.00</strong>
+                  </div>
+                  <div class="flex justify-between text-slate-400 text-[11px]">
+                    <span>Classic San Marzano Margherita</span>
+                    <strong class="text-white">$13.00</strong>
+                  </div>
+                </div>
+
+                <div class="text-[11px] font-mono text-slate-400 pt-2 border-t border-brand-darkBorder/60 flex items-center justify-between">
+                  <span>Hours Today:</span>
+                  <span class="text-slate-200 font-bold">4:00 PM – 9:30 PM</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 pt-0">
+              <button 
+                onclick="focusTruckOnMap(37.7712, -122.4230, 'Timber & Fire Pizza Co.')" 
+                class="w-full py-2.5 rounded-xl bg-brand-darkSurface hover:bg-brand-darkBorder text-white border border-brand-darkBorder font-mono text-xs font-bold uppercase transition-colors flex items-center justify-center gap-1.5"
+              >
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-red-500"></i>
+                <span>Locate on Map</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TRUCK 4: Bao & Boba Express -->
+          <div class="truck-card card-glass rounded-3xl overflow-hidden flex flex-col justify-between" data-category="asian">
+            <div>
+              <div class="aspect-[16/11] overflow-hidden bg-slate-900 relative">
+                <img 
+                  src="https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?auto=format&fit=crop&w=800&q=80" 
+                  alt="Bao and Boba Express" 
+                  class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                >
+                <span class="absolute top-3 left-3 bg-purple-600 text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase">
+                  Bao &bull; 0.9 mi
+                </span>
+                <span class="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-brand-amber text-[10px] font-mono font-bold px-2.5 py-1 rounded-full">
+                  4.7 ★ (115)
+                </span>
+              </div>
+
+              <div class="p-5 space-y-3">
+                <div>
+                  <span class="text-[10px] font-mono text-brand-emerald uppercase font-bold block">
+                    ● Open Now &bull; Closes 11:00 PM
+                  </span>
+                  <h3 class="font-bold text-lg text-white leading-snug mt-0.5">
+                    Bao &amp; Boba Express
+                  </h3>
+                  <p class="text-xs font-mono text-slate-400 mt-0.5">Tech Square Courtyard</p>
+                </div>
+
+                <div class="space-y-1.5 pt-2 border-t border-brand-darkBorder font-mono text-xs">
+                  <div class="flex justify-between text-slate-300">
+                    <span>Braised Pork Belly Bao (x2)</span>
+                    <strong class="text-brand-orange">$9.50</strong>
+                  </div>
+                  <div class="flex justify-between text-slate-400 text-[11px]">
+                    <span>Roasted Brown Sugar Milk Tea</span>
+                    <strong class="text-white">$6.00</strong>
+                  </div>
+                </div>
+
+                <div class="text-[11px] font-mono text-slate-400 pt-2 border-t border-brand-darkBorder/60 flex items-center justify-between">
+                  <span>Hours Today:</span>
+                  <span class="text-slate-200 font-bold">12:00 PM – 11:00 PM</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 pt-0">
+              <button 
+                onclick="focusTruckOnMap(37.7810, -122.4090, 'Bao & Boba Express')" 
+                class="w-full py-2.5 rounded-xl bg-brand-darkSurface hover:bg-brand-darkBorder text-white border border-brand-darkBorder font-mono text-xs font-bold uppercase transition-colors flex items-center justify-center gap-1.5"
+              >
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span>Locate on Map</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 6. HOW TRUCK SPOT WORKS: 3-STEP EXPLAINER                                 -->
+    <!-- ========================================================================= -->
+    <section id="how-it-works" class="py-20 max-w-7xl mx-auto px-6 lg:px-12 space-y-12 text-left">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <span class="text-brand-orange text-xs font-mono font-bold uppercase tracking-widest bg-brand-orange/15 px-3 py-1 rounded-full border border-brand-orange/30">
+          STREET FOOD ENGINE
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">How Truck Spot Works</h2>
+        <p class="text-slate-400 text-xs sm:text-sm font-light">Built for hungry foodies who value real-time precision and zero wasted trips.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <div class="p-7 rounded-3xl bg-brand-darkSurface border border-brand-darkBorder space-y-4 relative overflow-hidden">
+          <div class="w-12 h-12 rounded-2xl bg-brand-orange/20 text-brand-orange flex items-center justify-center font-black text-xl font-mono">
+            01
+          </div>
+          <h3 class="text-xl font-bold text-white">Live GPS Broadcasts</h3>
+          <p class="text-xs text-slate-400 font-light leading-relaxed">
+            Trucks broadcast verified GPS telemetry directly to our map. You see exact parking curbs, arrival time estimates, and departure countdowns.
+          </p>
+        </div>
+
+        <div class="p-7 rounded-3xl bg-brand-darkSurface border border-brand-darkBorder space-y-4 relative overflow-hidden">
+          <div class="w-12 h-12 rounded-2xl bg-brand-amber/20 text-brand-amber flex items-center justify-center font-black text-xl font-mono">
+            02
+          </div>
+          <h3 class="text-xl font-bold text-white">Live Wait Times</h3>
+          <p class="text-xs text-slate-400 font-light leading-relaxed">
+            Know whether the line is 3 people or 30 before you step out. Our proprietary order-flow algorithms estimate queue times accurately to within 2 minutes.
+          </p>
+        </div>
+
+        <div class="p-7 rounded-3xl bg-brand-darkSurface border border-brand-darkBorder space-y-4 relative overflow-hidden">
+          <div class="w-12 h-12 rounded-2xl bg-brand-emerald/20 text-brand-emerald flex items-center justify-center font-black text-xl font-mono">
+            03
+          </div>
+          <h3 class="text-xl font-bold text-white">Push Pop-Up Alerts</h3>
+          <p class="text-xs text-slate-400 font-light leading-relaxed">
+            Follow your favorite vendors. The second your beloved taco or smash burger truck rolls into your neighborhood, you get an instant mobile notification.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 7. EARLY ACCESS / PUSH NOTIFICATION SIGN-UP SECTION                       -->
+    <!-- ========================================================================= -->
+    <section id="early-access" class="py-20 px-6 lg:px-12 bg-gradient-to-b from-brand-dark to-brand-darkSurface border-t border-brand-darkBorder">
+      <div class="max-w-4xl mx-auto">
+        
+        <div class="rounded-3xl p-8 sm:p-14 bg-gradient-to-tr from-brand-darkCard via-brand-darkSurface to-brand-dark border-2 border-brand-orange/50 shadow-2xl relative overflow-hidden text-left space-y-8">
+          
+          <!-- Background Glow Effect -->
+          <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-brand-orange/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="space-y-3 max-w-2xl">
+            <span class="text-brand-orange text-xs font-mono font-bold uppercase tracking-widest bg-brand-orange/20 border border-brand-orange/40 px-3.5 py-1.5 rounded-full inline-block">
+              LIMITED FOUNDING MEMBER PERKS
+            </span>
+            <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight uppercase leading-none">
+              Get Early Access &amp; <br />
+              Never Miss A Pop-Up.
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
+              Truck Spot is rolling out beta access in select metro zones. Enter your email below to unlock the app 2 weeks before the public app store launch, plus receive <strong>$15 in free street meal credits</strong> from participating trucks.
+            </p>
+          </div>
+
+          <!-- Sign-Up Form -->
+          <form id="waitlist-form" onsubmit="handleWaitlistSubmit(event)" class="space-y-4 font-mono text-xs">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block uppercase font-bold text-slate-300 mb-1.5">Your Email Address *</label>
+                <div class="relative">
+                  <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                  <input 
+                    type="email" 
+                    id="waitlist-email"
+                    required 
+                    placeholder="foodie@email.com" 
+                    class="w-full bg-brand-dark border border-brand-darkBorder rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-orange font-mono"
+                  >
+                </div>
+              </div>
+
+              <div>
+                <label class="block uppercase font-bold text-slate-300 mb-1.5">Your Preferred Metro Neighborhood *</label>
+                <select id="waitlist-city" class="w-full bg-brand-dark border border-brand-darkBorder rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-orange font-mono cursor-pointer">
+                  <option value="downtown">Downtown Arts &amp; Financial District</option>
+                  <option value="south-side">South Congress / South Side</option>
+                  <option value="east-side">East Riverfront &amp; Brewery Row</option>
+                  <option value="west-end">Westside Tech Courtyard</option>
+                  <option value="suburbs">North Metro Food Park</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Push Notification Opt-in Toggle -->
+            <div class="p-4 rounded-2xl bg-brand-dark/80 border border-brand-darkBorder flex items-center justify-between gap-4">
+              <div class="space-y-0.5">
+                <span class="text-white font-bold block text-xs">Opt-In: Push Alerts When Trucks Park Nearby</span>
+                <span class="text-[11px] text-slate-400">Receive instantaneous ping when a verified truck parks within 0.5 miles.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" id="push-toggle" checked class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange"></div>
+              </label>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+              type="submit" 
+              class="w-full btn-fire py-4 rounded-xl text-xs sm:text-sm font-sans font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl"
+            >
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>Claim VIP Early Access &amp; $15 Credit</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+
+            <div class="text-center text-[10px] text-slate-500 pt-1">
+              🔒 Zero spam. We send launch invites and hot food alerts only. Unsubscribe with 1 click anytime.
+            </div>
+
+          </form>
+
+          <!-- Success State Message -->
+          <div id="waitlist-success" class="hidden p-8 rounded-2xl bg-brand-dark border border-brand-emerald text-center space-y-3 font-mono">
+            <div class="w-12 h-12 bg-brand-emerald/20 text-brand-emerald rounded-full flex items-center justify-center mx-auto border border-brand-emerald/40">
+              <i data-lucide="check-check" class="w-6 h-6"></i>
+            </div>
+            <strong class="text-lg text-white font-bold block">You’re On The VIP Launch Radar!</strong>
+            <p class="text-xs text-slate-300 max-w-md mx-auto font-light leading-relaxed">
+              We’ve reserved your spot. Check your inbox for your <strong>VIP Fast-Pass Code (#TS-89104)</strong> and confirmation instructions.
+            </p>
+            <div class="pt-2 text-[11px] text-brand-amber font-bold">
+              ★ Founding Member $15 Credit Credited to Your Email.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 8. FOOTER SECTION                                                         -->
+  <!-- ========================================================================= -->
+  <footer class="bg-black text-slate-400 py-16 text-xs font-mono border-t border-brand-darkBorder text-left">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 space-y-12">
+      
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-12 pb-12 border-b border-brand-darkBorder">
+        
+        <!-- Brand Summary -->
+        <div class="space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="font-black text-2xl text-white tracking-tight">TRUCK<span class="text-brand-orange">SPOT</span></span>
+          </div>
+          <p class="text-xs leading-relaxed text-slate-400 font-light">
+            The real-time mobile platform revolutionizing street food discovery. Live GPS beacons, automated line-time tracking, and mobile ordering for hungry urban foodies.
+          </p>
+          <div class="text-[11px] text-brand-orange font-bold">
+            Built for Street Food Culture &bull; Est. 2026
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="space-y-3 font-mono">
+          <h4 class="font-bold text-white uppercase text-xs tracking-wider">Navigation</h4>
+          <ul class="space-y-2 text-slate-400 text-xs">
+            <li><a href="#map-section" class="hover:text-brand-orange">Interactive Radar Map</a></li>
+            <li><a href="#featured" class="hover:text-brand-orange">Featured Food Trucks</a></li>
+            <li><a href="#how-it-works" class="hover:text-brand-orange">How Tracking Works</a></li>
+            <li><a href="#early-access" class="hover:text-brand-orange">VIP Early Access</a></li>
+          </ul>
+        </div>
+
+        <!-- For Vendors -->
+        <div class="space-y-3 font-mono">
+          <h4 class="font-bold text-white uppercase text-xs tracking-wider">For Operators</h4>
+          <ul class="space-y-2 text-slate-400 text-xs">
+            <li><a href="#vendors" onclick="openVendorModal()" class="hover:text-brand-orange">List Your Food Truck</a></li>
+            <li><a href="#vendors" onclick="openVendorModal()" class="hover:text-brand-orange">GPS Beacon Hardware</a></li>
+            <li><a href="#vendors" onclick="openVendorModal()" class="hover:text-brand-orange">Skip-The-Line Ordering</a></li>
+            <li><a href="#vendors" onclick="openVendorModal()" class="hover:text-brand-orange">Operator Payouts</a></li>
+          </ul>
+        </div>
+
+        <!-- Social & App Badges -->
+        <div class="space-y-4 font-mono">
+          <h4 class="font-bold text-white uppercase text-xs tracking-wider">Connect &amp; Social</h4>
+          <div class="flex items-center gap-4 text-slate-400 text-sm">
+            <a href="#home" class="hover:text-brand-orange">Instagram</a>
+            <span>&bull;</span>
+            <a href="#home" class="hover:text-brand-orange">TikTok</a>
+            <span>&bull;</span>
+            <a href="#home" class="hover:text-brand-orange">X / Twitter</a>
+          </div>
+          <p class="text-[10px] text-slate-500">
+            Inquiries: partners@truckspot.app<br />
+            Press: media@truckspot.app
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+        <div>
+          &copy; 2026 Truck Spot Technologies Inc. All Rights Reserved.
+        </div>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-slate-300">Privacy Policy</a>
+          <a href="#" class="hover:text-slate-300">Terms of Service</a>
+          <a href="#" class="hover:text-slate-300">Vendor Agreement</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- VENDOR REGISTRATION MODAL                                                 -->
+  <!-- ========================================================================= -->
+  <div id="vendor-modal" class="fixed inset-0 bg-black/80 z-50 hidden backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-brand-darkSurface rounded-3xl max-w-lg w-full p-8 border border-brand-darkBorder shadow-2xl relative text-left space-y-6">
+      
+      <button onclick="closeVendorModal()" class="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-brand-darkCard transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="space-y-1.5 border-b border-brand-darkBorder pb-4">
+        <span class="text-[10px] font-mono uppercase tracking-widest text-brand-orange font-bold block">
+          OPERATOR BROADCAST PROGRAM
+        </span>
+        <h3 class="text-2xl font-black text-white">Join as a Founding Food Truck</h3>
+        <p class="text-xs text-slate-400 font-mono">
+          Broadcast your daily pop-up locations, eliminate slow afternoons, and capture pre-orders with 0% commission in Month 1.
+        </p>
+      </div>
+
+      <form onsubmit="handleVendorSubmit(event)" class="space-y-4 font-mono text-xs">
+        <div>
+          <label class="block uppercase font-bold text-slate-300 mb-1">Food Truck Name *</label>
+          <input type="text" required placeholder="e.g. Rolling BBQ Co." class="w-full bg-brand-dark border border-brand-darkBorder rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-orange">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block uppercase font-bold text-slate-300 mb-1">Cuisine Type *</label>
+            <input type="text" required placeholder="Tacos, Burgers, etc." class="w-full bg-brand-dark border border-brand-darkBorder rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-orange">
+          </div>
+          <div>
+            <label class="block uppercase font-bold text-slate-300 mb-1">City / Metro *</label>
+            <input type="text" required placeholder="Austin, TX / LA / NYC" class="w-full bg-brand-dark border border-brand-darkBorder rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-orange">
+          </div>
+        </div>
+
+        <div>
+          <label class="block uppercase font-bold text-slate-300 mb-1">Operator Phone / WhatsApp *</label>
+          <input type="tel" required placeholder="(555) 019-2834" class="w-full bg-brand-dark border border-brand-darkBorder rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-orange">
+        </div>
+
+        <button type="submit" class="w-full btn-fire py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs">
+          Request Vendor Onboarding Kit &rarr;
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Leaflet.js Script -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Vanilla JavaScript Logic -->
+  <script>
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+      lucide.createIcons();
+    } else {
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
+      });
+    }
+
+    // 5 Clickable Food Truck Profiles Data
+    const foodTrucks = [
+      {
+        id: 'truck-1',
+        title: 'El Fuego Birria Tacos',
+        cuisine: 'Mexican &bull; Birria Specialists',
+        address: '4th & Pine St (Outside City Hall)',
+        distance: '0.2 Miles',
+        wait: '~6 Min Wait',
+        rating: '4.9 ★ (184 reviews)',
+        status: 'Open Now &bull; Parked',
+        dishName: 'Crispy Quesabirria w/ Consomé',
+        dishDesc: 'Slow braised beef, Oaxaca cheese, dipping broth',
+        dishPrice: '$13.50',
+        img: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=800&q=80',
+        coords: [37.7749, -122.4194],
+        emoji: '🌮',
+        color: '#FF5E14'
+      },
+      {
+        id: 'truck-2',
+        title: 'Heavy Metal Smash Lab',
+        cuisine: 'American &bull; Wagyu Smash Burgers',
+        address: '8th Ave & Market St (Plaza Lot)',
+        distance: '0.4 Miles',
+        wait: '~8 Min Wait',
+        rating: '4.8 ★ (220 reviews)',
+        status: 'Open Now &bull; Sizzling',
+        dishName: 'Double Wagyu Smash w/ Secret Sauce',
+        dishDesc: 'Crispy lacy edges, toasted brioche, melted cheddar',
+        dishPrice: '$12.00',
+        img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
+        coords: [37.7785, -122.4140],
+        emoji: '🍔',
+        color: '#FFB703'
+      },
+      {
+        id: 'truck-3',
+        title: 'Timber & Fire Pizza Co.',
+        cuisine: 'Artisan Neapolitan Wood-Fired',
+        address: 'Brewery District Lot #3',
+        distance: '0.7 Miles',
+        wait: '~12 Min Wait',
+        rating: '4.9 ★ (140 reviews)',
+        status: 'Open Now &bull; 900° Fired',
+        dishName: 'Hot Honey & Soppressata Pizza',
+        dishDesc: 'Fermented chili honey, fresh mozzarella, basil',
+        dishPrice: '$15.00',
+        img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+        coords: [37.7712, -122.4230],
+        emoji: '🍕',
+        color: '#EF4444'
+      },
+      {
+        id: 'truck-4',
+        title: 'Bao & Boba Express',
+        cuisine: 'Taiwanese Street Buns & Tea',
+        address: 'Tech Square Courtyard',
+        distance: '0.9 Miles',
+        wait: '~5 Min Wait',
+        rating: '4.7 ★ (115 reviews)',
+        status: 'Open Now &bull; Fresh Steamed',
+        dishName: 'Braised Pork Belly Bao (x2)',
+        dishDesc: 'Pickled mustard greens, crushed peanut, cilantro',
+        dishPrice: '$9.50',
+        img: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?auto=format&fit=crop&w=800&q=80',
+        coords: [37.7810, -122.4090],
+        emoji: '🥟',
+        color: '#A855F7'
+      },
+      {
+        id: 'truck-5',
+        title: 'Seoul Street BBQ Co.',
+        cuisine: 'Korean BBQ Fusion & Rice Bowls',
+        address: '5th & Mission Tech Hub',
+        distance: '1.2 Miles',
+        wait: '~10 Min Wait',
+        rating: '4.8 ★ (165 reviews)',
+        status: 'Open Now &bull; Grilling',
+        dishName: 'Spicy Bulgogi Pork Fries & Kimchi',
+        dishDesc: 'Scallions, spicy mayo, toasted sesame, fried egg',
+        dishPrice: '$14.00',
+        img: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?auto=format&fit=crop&w=800&q=80',
+        coords: [37.7835, -122.4035],
+        emoji: '🔥',
+        color: '#10B981'
+      }
+    ];
+
+    let map;
+    let markers = {};
+
+    function initMap() {
+      // Centered on Downtown
+      map = L.map('truck-map', {
+        zoomControl: true,
+        scrollWheelZoom: false
+      }).setView([37.7765, -122.4150], 14);
+
+      // CartoDB Dark Matter Tiles (Clean, Sleek Street Tiles)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
+        maxZoom: 18,
+        subdomains: 'abcd'
+      }).addTo(map);
+
+      // Add Custom Interactive Markers
+      foodTrucks.forEach((truck, index) => {
+        const customIcon = L.divIcon({
+          className: 'custom-pin',
+          html: `
+            <div class="truck-marker relative w-10 h-10 bg-slate-900 border-2" style="border-color: ${truck.color};" onclick="selectTruck(${index})">
+              <span class="pulse-ring" style="border-color: ${truck.color};"></span>
+              <span class="text-base">${truck.emoji}</span>
+            </div>
+          `,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+
+        const marker = L.marker(truck.coords, { icon: customIcon }).addTo(map);
+        marker.on('click', () => {
+          selectTruck(index);
+        });
+        markers[truck.title] = marker;
+      });
+    }
+
+    function selectTruck(index) {
+      const truck = foodTrucks[index];
+      if (!truck) return;
+
+      // Update Panel Info smoothly
+      document.getElementById('panel-title').innerText = truck.title;
+      document.getElementById('panel-cuisine').innerHTML = truck.cuisine;
+      document.getElementById('panel-address').innerText = truck.address;
+      document.getElementById('panel-distance').innerText = truck.distance;
+      document.getElementById('panel-wait').innerText = truck.wait;
+      document.getElementById('panel-rating').innerText = truck.rating;
+      document.getElementById('panel-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-ping"></span> ${truck.status}`;
+      document.getElementById('panel-dish-name').innerText = truck.dishName;
+      document.getElementById('panel-dish-desc').innerText = truck.dishDesc;
+      document.getElementById('panel-dish-price').innerText = truck.dishPrice;
+      document.getElementById('panel-img').src = truck.img;
+
+      // Center map smoothly
+      if (map) {
+        map.flyTo(truck.coords, 15, { duration: 1.2 });
+      }
+
+      // Re-trigger lucide icons
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function focusTruckOnMap(lat, lng, title) {
+      const mapEl = document.getElementById('map-section');
+      if (mapEl) {
+        mapEl.scrollIntoView({ behavior: 'smooth' });
+      }
+      const idx = foodTrucks.findIndex(t => t.title.toLowerCase().includes(title.toLowerCase()));
+      if (idx !== -1) {
+        setTimeout(() => selectTruck(idx), 400);
+      }
+    }
+
+    // Category Tabs Filter
+    function filterTrucks(cat) {
+      const buttons = ['all', 'tacos', 'burgers', 'pizza', 'asian'];
+      buttons.forEach(b => {
+        const el = document.getElementById('btn-cat-' + b);
+        if (el) {
+          el.className = 'px-4 py-2 rounded-xl bg-brand-darkCard hover:bg-brand-darkBorder text-slate-300 font-bold transition-all border border-brand-darkBorder';
+        }
+      });
+
+      const activeBtn = document.getElementById('btn-cat-' + cat);
+      if (activeBtn) {
+        activeBtn.className = 'px-4 py-2 rounded-xl bg-brand-orange text-white font-bold transition-all shadow-sm';
+      }
+
+      const cards = document.querySelectorAll('.truck-card');
+      cards.forEach(card => {
+        const cardCat = card.getAttribute('data-category');
+        if (cat === 'all' || cardCat === cat) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    // Waitlist Form Handler
+    function handleWaitlistSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('waitlist-email').value;
+      if (!email || !email.includes('@')) {
+        alert('Please enter a valid email address.');
+        return;
+      }
+
+      document.getElementById('waitlist-form').classList.add('hidden');
+      document.getElementById('waitlist-success').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Vendor Modal
+    function openVendorModal() {
+      document.getElementById('vendor-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeVendorModal() {
+      document.getElementById('vendor-modal').classList.add('hidden');
+    }
+
+    function handleVendorSubmit(e) {
+      e.preventDefault();
+      alert('Thank you! Your food truck operator application has been submitted. Our vendor onboarding manager will text you within 24 hours with your free GPS beacon setup kit.');
+      closeVendorModal();
+    }
+
+    // Mobile Hamburger
+    const mobileToggle = document.getElementById('mobile-toggle');
+    const mobileDrawer = document.getElementById('mobile-drawer');
+    if (mobileToggle && mobileDrawer) {
+      mobileToggle.addEventListener('click', () => {
+        mobileDrawer.classList.toggle('hidden');
+      });
+      document.querySelectorAll('#mobile-drawer a').forEach(l => {
+        l.addEventListener('click', () => mobileDrawer.classList.add('hidden'));
+      });
+    }
+
+    // Initialize Map on Load
+    window.addEventListener('load', () => {
+      initMap();
+    });
+  </script>
+</body>
+</html>
