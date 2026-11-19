@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="100%">
+  <!-- ================= LOGOMARK: MONOCHROME LOCATION PIN FOOD TRUCK ================= -->
+  <g transform="translate(12, 10)">
+    <!-- Pin Outer Silhouette (Pure Black) -->
+    <path d="M 50,4 C 29.5,4 13,20.5 13,41 C 13,64 45.8,92.6 48.2,94.7 C 49.3,95.6 50.7,95.6 51.8,94.7 C 54.2,92.6 87,64 87,41 C 87,20.5 70.5,4 50,4 Z" 
+          fill="#000000"/>
+
+    <!-- Food Truck Negative Space Cutout (Transparent / Knockout White) -->
+    <path d="M 26,38 C 26,35 28,33 31,33 L 56,33 C 58.5,33 60.5,34.5 61.5,36.5 L 68.5,45.5 C 69.5,46.8 70,48.2 70,50 L 70,60 C 70,62 68.5,63.5 66.5,63.5 L 28,63.5 C 26.5,63.5 26,62 26,60 Z" 
+          fill="#FFFFFF"/>
+
+    <!-- Windshield Infill -->
+    <path d="M 58,37.5 L 65.5,47 L 58,47 Z" fill="#000000"/>
+
+    <!-- Serving Window Hatch -->
+    <rect x="32" y="38" width="18" height="13" rx="2" fill="#000000"/>
+
+    <!-- Awning Stripe -->
+    <path d="M 30,38 L 52,38 L 50,34.5 L 32,34.5 Z" fill="#FFFFFF"/>
+
+    <!-- Serving Counter Indicator -->
+    <circle cx="41" cy="46" r="2.8" fill="#FFFFFF"/>
+
+    <!-- Rear Wheel -->
+    <circle cx="36" cy="63.5" r="6.5" fill="#000000"/>
+    <circle cx="36" cy="63.5" r="2.5" fill="#FFFFFF"/>
+
+    <!-- Front Wheel -->
+    <circle cx="60" cy="63.5" r="6.5" fill="#000000"/>
+    <circle cx="60" cy="63.5" r="2.5" fill="#FFFFFF"/>
+
+    <!-- Top GPS Radar Beacon -->
+    <circle cx="50" cy="18" r="4.5" fill="#FFFFFF"/>
+    <circle cx="50" cy="18" r="2" fill="#000000"/>
+  </g>
+
+  <!-- ================= TYPOGRAPHY: "TRUCK SPOT" ================= -->
+  <g transform="translate(136, 28)">
+    <!-- Primary Wordmark with Weight Contrast for Instant Recognition in Black -->
+    <text x="0" y="48" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-size="48" letter-spacing="-1.8" fill="#000000">
+      <tspan font-weight="900">TRUCK</tspan> <tspan font-weight="700">SPOT</tspan>
+    </text>
+
+    <!-- Subtitle / Tagline -->
+    <text x="3" y="76" font-family="'JetBrains Mono', 'Plus Jakarta Sans', monospace" font-weight="700" font-size="11" letter-spacing="3.8" fill="#000000">
+      REAL-TIME FOOD RADAR
+    </text>
+
+    <!-- Accent Dot -->
+    <circle cx="328" cy="42" r="4.5" fill="#000000"/>
+  </g>
+</svg>
